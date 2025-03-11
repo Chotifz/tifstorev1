@@ -2,20 +2,120 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* styles/globals.css */
+
+.swiper-container.two {
+  width: 100%;
+  padding-bottom: 60px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.swiper-slide {
+  width: 390px;
+  height: auto;
+  padding: 0 15px;
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+.swiper-slide img {
+  display: block;
+  margin: auto;
+  width: 100%;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
 }
+
+.swiper-pagination-bullet {
+  background: transparent;
+  border: 1px solid var(--warna_3, #1da1f2);
+  border-radius: 10px;
+  height: 10px;
+  width: 26px;
+  opacity: 1;
+  transition: 0.2s;
+}
+
+.swiper-pagination-bullet-active {
+  background: var(--warna_3, #1da1f2);
+  border: none;
+  height: 12px;
+  width: 12px;
+}
+
+.tab-category.nav-pills .nav-link {
+  color: #ddd;
+}
+
+.tab-category.nav-pills .nav-link:hover {
+  color: #fff;
+}
+
+.nav-pills .nav-link.active {
+  color: #fff;
+  background-color: var(--warna_3, #1da1f2);
+  border-bottom: 3px solid #fff;
+}
+
+.nav-pills .nav-link {
+  margin: 0 !important;
+  font-size: 8px;
+}
+
+.form-control:focus {
+  border: 1px solid #cfd5db;
+  background-color: #ffffff;
+  color: #495057 !important;
+}
+
+.card-game img {
+  border-radius: 10px;
+}
+
+.metode img {
+  max-width: 100%;
+  height: auto;
+}
+
+:root  {
+  --background: 200.4 10% 95%;
+  --foreground: 200.4 5% 10%;
+  --card: 200.4 10% 90%;
+  --card-foreground: 200.4 5% 11%;
+  --popover: 200.4 10% 95%;
+  --popover-foreground: 200.4 95% 10%;
+  --primary: 200.4 98% 39.4%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 200.4 10% 70%;
+  --secondary-foreground: 0 0% 0%;
+  --muted: 162.4 10% 85%;
+  --muted-foreground: 200.4 5% 35%;
+  --accent: 162.4 10% 80%;
+  --accent-foreground: 200.4 5% 11%;
+  --destructive: 0 50% 30%;
+  --destructive-foreground: 200.4 5% 90%;
+  --border: 200.4 20% 50%;
+  --input: 200.4 20% 18%;
+  --ring: 200.4 98% 39.4%;
+  --radius: 0.75rem;
+}
+.dark  {
+  --background: 200.4 10% 10%;
+  --foreground: 200.4 5% 90%;
+  --card: 200.4 10% 10%;
+  --card-foreground: 200.4 5% 90%;
+  --popover: 200.4 10% 5%;
+  --popover-foreground: 200.4 5% 90%;
+  --primary: 200.4 98% 39.4%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 200.4 10% 11%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 162.4 10% 15%;
+  --muted-foreground: 200.4 5% 60%;
+  --accent: 162.4 10% 15%;
+  --accent-foreground: 200.4 5% 90%;
+  --destructive: 0 50% 30%;
+  --destructive-foreground: 200.4 5% 90%;
+  --border: 200.4 20% 18%;
+  --input: 200.4 20% 18%;
+  --ring: 200.4 98% 39.4%;
+  --radius: 0.75rem;
+}
+
+

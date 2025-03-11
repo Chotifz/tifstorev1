@@ -8,6 +8,7 @@ import '@/styles/globals.css';
 import 'react-toastify/dist/ReactToastify.css';
 
 
+
 function MyApp({ Component, pageProps }) {
   const getLayout = Component.getLayout || ((page) => <Layout>{page}</Layout>);
 
