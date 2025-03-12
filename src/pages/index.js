@@ -1,240 +1,185 @@
 import { gameData } from '@/config/dummy-data';
-import { formatPrice } from '@/config/format-price';
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { slugify } from '@/utils/slug';
-import { renderGameCategories, renderPromoBanner, renderTags } from '@/utils/func';
-import DetailContent from '@/components/DetailContent';
+import { slugify } from '@/lib/utils';
+import CarouselPromo from '@/components/CarouselPromo';
+import { motion } from 'framer-motion';
 
-export function TopUpApp (){
-  const [showDetail, setShowDetail] = useState(false);
-  const [activeCategory, setActiveCategory] = useState('diamonds');
-  const [selectedGame, setSelectedGame] = useState(null);
-  
-  const handleSelectGame = (game) => {
-    setSelectedGame(game);
-    
-    // Set default active category based on first product category
-    if (game.products && game.products.length > 0) {
-      setActiveCategory(game.products[0].category);
-    }
-    
-    setShowDetail(true);
-  };
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useSession } from 'next-auth/react';
 
-  // Homepage content
-  const HomeContent = () => {
-    // Get all category filters
-    const allCategories = gameData.categories.map(cat => ({
-      id: cat.id,
-      name: cat.name
-    }));
-    
-    const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('all');
-    
-    // Filter games based on selected category
-    const filteredGames = selectedCategoryFilter === 'all' 
-      ? gameData.games 
-      : gameData.games.filter(game => game.categories.includes(selectedCategoryFilter));
-    
-    return (
-      <div className="p-4">
-        <h1 className="text-2xl font-bold mb-4">GAMES</h1>
-        
-        {/* {renderGlobalPromoBanner()} */}
-        
-        <div className="mb-6">
-          <div className="flex overflow-x-auto space-x-2 pb-2">
-            <button
-              onClick={() => setSelectedCategoryFilter('all')}
-              className={`px-4 py-2 rounded-full whitespace-nowrap text-sm font-medium ${
-                selectedCategoryFilter === 'all'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-              }`}
-            >
-              Semua
-            </button>
-            
-            {allCategories.map(category => (
-              <button
-                key={category.id}
-                onClick={() => setSelectedCategoryFilter(category.id)}
-                className={`px-4 py-2 rounded-full whitespace-nowrap text-sm font-medium ${
-                  selectedCategoryFilter === category.id
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-                }`}
-              >
-                {category.name}
-              </button>
-            ))}
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredGames.map(game => (
-            <div 
-              key={game.id}
-              className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer transform transition-transform duration-300 hover:scale-105"
-              onClick={() => handleSelectGame(game)}
-            >
-              <div className="bg-gradient-to-r from-blue-500 to-purple-600 h-24 flex items-center justify-center">
-                <img 
-                  src={`/api/placeholder/80/80`}
-                  alt={game.name}
-                  className="h-16 w-16 rounded-full bg-white p-1 shadow-lg"
-                />
-              </div>
-              <div className="p-4">
-                <h2 className="text-lg font-bold">{game.name}</h2>
-                <p className="text-sm text-gray-600">{game.description}</p>
-                <p className="text-xs text-gray-500 mt-2">Developer: {game.developer}</p>
-                
-                <div className="mt-2 flex flex-wrap">
-                  {renderGameCategories(game.categories)}
-                </div>
-                
-                <div className="mt-4 flex justify-between items-center">
-                  <span className="text-xs text-gray-500">
-                    {game.products.reduce((total, category) => total + category.items.length, 0)} top-up options
-                  </span>
-                  <button className="text-blue-600 text-sm font-medium">
-                    View Details →
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
+export default function HomePage() {
+     const { data: session, status } = useSession();
 
-  return (
-    <main className="max-w-6xl mx-auto py-6">
-      {showDetail && selectedGame ? <DetailContent selectedGame={selectedGame} setActiveCategory={setActiveCategory} activeCategory={activeCategory} setShowDetail={setShowDetail}/> : <HomeContent />}
-    </main>
-  );
-};
-
-
-
-
-
-export  default  function TopUpAppp () {
+     console.log( status )
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('all');
   
-  // Filter games based on selected category
   const filteredGames = selectedCategoryFilter === 'all' 
     ? gameData.games 
     : gameData.games.filter(game => game.categories.includes(selectedCategoryFilter));
   
-  // Get all category filters
-   const allCategories = gameData.categories.map(cat => ({
-      id: cat.id,
-      name: cat.name
+  const allCategories = gameData.categories.map(cat => ({
+    id: cat.id,
+    name: cat.name
   }));
     
   // Function to get URL slug from game
-  
   const getGameSlug = (game) => {
     return slugify(game.name);
   };
 
-  
-    // Render global promo banner if applicable
-  const renderGlobalPromoBanner = () => {
-    if (gameData.globalPromos && gameData.globalPromos.length > 0) {
-      const promo = gameData.globalPromos[0]; // Just display first promo for simplicity
-      return (
-        <div className="bg-gradient-to-r from-teal-600 to-emerald-600 rounded-lg p-4 mb-6 text-white shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-bold text-lg">{promo.name}</h3>
-              <p className="text-sm opacity-90">{promo.description}</p>
-              <div className="mt-2">
-                <span className="bg-white text-emerald-700 text-xs font-bold py-1 px-2 rounded-full">
-                  {promo.discount}
-                </span>
-              </div>
-            </div>
-            <div className="text-sm">
-              Berakhir: {new Date(promo.endDate).toLocaleDateString('id-ID')}
-            </div>
-          </div>
-        </div>
-      );
+  // Animation variants for staggered animation
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.05
+      }
     }
-    return null;
- 
   };
+
+  const item = {
+    hidden: { y: 20, opacity: 0 },
+    show: { y: 0, opacity: 1 }
+  };
+
   return (
-    <main className="max-w-7xl mx-auto">
-    <div className="">
-      <h1 className="text-xl font-bold mb-4">GAMES</h1>
+    <main className="max-w-7xl mx-auto px-4 py-6">
+      {/* Hero Carousel */}
+      <section className="mb-10">
+        <CarouselPromo />
+      </section>
+      
+      {/* Games Section */}
+      <section>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-foreground">GAMES</h2>
+          <Link 
+            href="/games" 
+            className="text-sm font-medium text-primary hover:underline"
+          >
+            Lihat Semua
+          </Link>
+        </div>
 
-       {renderGlobalPromoBanner()}
-
-{/* Kategori filter */}
-       <div className="mb-6">
-          <div className="flex overflow-x-auto space-x-2 pb-2">
-            <button
-              onClick={() => setSelectedCategoryFilter('all')}
-              className={`px-4 py-2 rounded-full whitespace-nowrap text-sm font-medium ${
-                selectedCategoryFilter === 'all'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-              }`}
-            >
-              Semua
-            </button>
-            
-            {allCategories.map(category => (
-              <button
-                key={category.id}
-                onClick={() => setSelectedCategoryFilter(category.id)}
-                className={`px-4 py-2 rounded-full whitespace-nowrap text-sm font-medium ${
-                  selectedCategoryFilter === category.id
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-                }`}
+        {/* Category filter */}
+        <div className="mb-8 overflow-x-auto pb-2 scrollbar-hide">
+          <Tabs 
+            value={selectedCategoryFilter} 
+            onValueChange={setSelectedCategoryFilter}
+            className="w-full"
+          >
+            <TabsList className="bg-muted/50 p-1 h-auto flex-wrap">
+              <TabsTrigger 
+                value="all" 
+                className="rounded-full px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
               >
-                {category.name}
-              </button>
-            ))}
-          </div>
+                Semua
+              </TabsTrigger>
+              
+              {allCategories.map(category => (
+                <TabsTrigger
+                  key={category.id}
+                  value={category.id}
+                  className="rounded-full px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                >
+                  {category.name}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
         </div>
       
+        {/* Games Grid */}
+        <motion.div 
+          className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-4"
+          variants={container}
+          initial="hidden"
+          animate="show"
+        >
+          {filteredGames.map(game => (
+            <motion.div key={game.id} variants={item}>
+              <Link href={`/games/${getGameSlug(game)}`}>
+                <Card className="overflow-hidden h-full border-border/40 hover:border-primary/30 transition-all duration-300 hover:shadow-md bg-card hover:-translate-y-1">
+                  <div className="aspect-square relative overflow-hidden bg-background">
+                    <img 
+                      src={game.icon}
+                      alt={game.name}
+                      className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
+                    />
+                    {/* Category badges - show only first category */}
+                    {game.categories && game.categories.length > 0 && (
+                      <div className="absolute top-2 left-2">
+                        <Badge 
+                          variant="secondary" 
+                          className="text-[10px] font-medium px-2 py-0 bg-secondary/80 backdrop-blur-sm"
+                        >
+                          {allCategories.find(cat => cat.id === game.categories[0])?.name || game.categories[0]}
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+                  <CardContent className="p-3 space-y-1">
+                    <p className="text-[0.65rem] sm:text-xs text-muted-foreground line-clamp-1">{game.developer}</p>
+                    <h3 className="font-semibold text-xs sm:text-sm line-clamp-2 leading-tight">{game.name}</h3>
+                
+                  </CardContent>
+                </Card>
+              </Link>
+            </motion.div>
+          ))}
+        </motion.div>
+      </section>
       
+      {/* Popular Categories Section */}
+      <section className="mt-16">
+        <h2 className="text-2xl font-bold text-foreground mb-6">Kategori Populer</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {allCategories.slice(0, 4).map(category => (
+            <Link key={category.id} href={`/categories/${category.id}`}>
+              <div className="relative h-32 rounded-lg overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/80 to-primary/40 group-hover:from-primary/90 group-hover:to-primary/50 transition-all duration-300"></div>
+                <div className="absolute inset-0 flex items-center justify-center text-white">
+                  <h3 className="font-bold text-lg">{category.name}</h3>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
       
-      
-      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4 ">
-        {filteredGames.map(game => (
+      {/* Recent Transactions Section */}
+      <section className="mt-16 mb-10">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-foreground">Transaksi Terakhir</h2>
           <Link 
-            href={`/games/${getGameSlug(game)}`} 
-            key={game.id}
+            href="/transactions" 
+            className="text-sm font-medium text-primary hover:underline"
           >
-            <div className="bg-slate-100 rounded-xl shadow-md overflow-hidden cursor-pointer transform transition-transform duration-300 hover:scale-105 h-56 sm:h-64 lg:h-72 flex flex-col justify-between">
-              {/* Isi game card */}
-              <div className=" flex items-center justify-center relative ">
-                <img 
-                  src={game.icon}
-                  alt={game.name}
-                  className="h-full w-full object-cover  bg-white p-0.5 shadow-lg rounded-xl"
-                />
-              </div>
-              <div className="px-3 py-4 flex flex-col gap-2">
-                <p className="text-xs text-gray-600">{game.developer}</p>
-                <h2 className="text-sm md:text-base font-semibold">{game.name}</h2>
-             
-              </div>
-            </div>
+            Lihat Semua
           </Link>
-        ))}
-      </div>
-    </div>
+        </div>
+        
+        <div className="bg-muted/30 rounded-lg p-6 text-center">
+          <div className="max-w-md mx-auto">
+            <div className="rounded-full bg-muted-foreground/10 p-3 inline-flex mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-foreground mb-2">Belum Ada Transaksi</h3>
+            <p className="text-muted-foreground mb-6">Ayo mulai top up game favoritmu sekarang!</p>
+            <Link href="/games">
+              <button className="bg-primary text-primary-foreground px-6 py-2 rounded-md font-medium hover:bg-primary/90 transition-colors">
+                Mulai Top Up
+              </button>
+            </Link>
+          </div>
+        </div>
+      </section>
     </main>
   );
-};
-
+}
