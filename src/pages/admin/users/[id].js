@@ -12,13 +12,15 @@ import {
   Clock,
   ShoppingBag,
   Edit,
-  AlertTriangle,
-  ShieldAlert,
-  ShieldCheck,
   Check,
   X,
   CheckCircle,
 } from 'lucide-react';
+
+// API & Hooks
+import { useUser } from '@/hooks/queries/useUsers';
+import { useUpdateUser } from '@/hooks/mutations/useUserMutations';
+import { useToast } from "@/hooks/useToast";
 
 // Components
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,146 +40,46 @@ import {
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Sidebar from '@/components/Sidebar';
+import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 
 export default function UserDetailPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const { id } = router.query;
+  const { toast } = useToast();
   
-  const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState('profile');
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState(null);
-  const [successMessage, setSuccessMessage] = useState('');
   
-  // Mock user data (would come from an API in a real app)
-  const mockUser = {
-    id: '1',
-    name: 'John Doe',
-    email: 'john@example.com',
-    role: 'USER',
-    isVerified: true,
-    joinDate: '2025-01-15T10:30:45.000Z',
-    lastLoginDate: '2025-03-12T08:15:22.000Z',
-    image: null,
-    status: 'active',
-    ordersCount: 12,
-    phone: '08123456789',
-    address: 'Jl. Sudirman No. 123, Jakarta',
-    emailNotifications: true,
-    smsNotifications: false
-  };
+  // Fetch user data with TanStack Query
+  const { 
+    data: user, 
+    isLoading, 
+    isError, 
+    error,
+    refetch
+  } = useUser(id);
   
-  // Mock orders
-  const mockOrders = [
-    {
-      id: 'TRX12345678',
-      date: '2025-03-10T14:30:00.000Z',
-      game: 'Mobile Legends',
-      product: '86 Diamonds',
-      price: 19000,
-      status: 'success',
-      paymentMethod: 'DANA',
-      userId: '123456789',
-      serverId: '7890',
-    },
-    {
-      id: 'TRX12345679',
-      date: '2025-03-05T10:15:00.000Z',
-      game: 'PUBG Mobile',
-      product: '325 UC',
-      price: 79000,
-      status: 'success',
-      paymentMethod: 'OVO',
-      userId: '567891234',
-      serverId: '',
-    },
-    {
-      id: 'TRX12345680',
-      date: '2025-02-25T18:45:00.000Z',
-      game: 'Genshin Impact',
-      product: 'Blessing of the Welkin Moon',
-      price: 75000,
-      status: 'success',
-      paymentMethod: 'GoPay',
-      userId: '987654321',
-      serverId: '',
-    },
-    {
-      id: 'TRX12345681',
-      date: '2025-02-20T09:30:00.000Z',
-      game: 'Free Fire',
-      product: '520 Diamonds',
-      price: 75000,
-      status: 'failed',
-      paymentMethod: 'QRIS',
-      userId: '456789123',
-      serverId: '',
-    }
-  ];
+  // User update mutation
+  const updateUserMutation = useUpdateUser();
   
-  // Mock login activity
-  const mockLoginActivity = [
-    {
-      id: 1,
-      date: '2025-03-12T08:15:22.000Z',
-      ipAddress: '114.122.xxx.xxx',
-      device: 'iPhone (iOS 18.2)',
-      browser: 'Safari',
-      location: 'Jakarta, Indonesia',
-      status: 'success'
-    },
-    {
-      id: 2,
-      date: '2025-03-10T14:22:15.000Z',
-      ipAddress: '114.122.xxx.xxx',
-      device: 'iPhone (iOS 18.2)',
-      browser: 'Safari',
-      location: 'Jakarta, Indonesia',
-      status: 'success'
-    },
-    {
-      id: 3,
-      date: '2025-03-05T09:30:45.000Z',
-      ipAddress: '182.253.xxx.xxx',
-      device: 'Windows PC',
-      browser: 'Chrome',
-      location: 'Bandung, Indonesia',
-      status: 'success'
-    },
-    {
-      id: 4,
-      date: '2025-03-01T11:15:30.000Z',
-      ipAddress: '103.147.xxx.xxx',
-      device: 'Android Phone',
-      browser: 'Chrome Mobile',
-      location: 'Jakarta, Indonesia',
-      status: 'failed'
-    }
-  ];
-  
-  // Load user data
+  // Set initial form data when user data is loaded
   useEffect(() => {
-    if (id) {
-      // In a real app, you'd fetch user data from API
-      setTimeout(() => {
-        setUser(mockUser);
-        setFormData({
-          name: mockUser.name,
-          email: mockUser.email,
-          phone: mockUser.phone || '',
-          address: mockUser.address || '',
-          role: mockUser.role,
-          status: mockUser.status,
-          emailNotifications: mockUser.emailNotifications,
-          smsNotifications: mockUser.smsNotifications
-        });
-        setIsLoading(false);
-      }, 800);
+    if (user) {
+      setFormData({
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        address: user.address || '',
+        role: user.role || 'USER',
+        status: user.status || 'active',
+        emailNotifications: user.emailNotifications || false,
+        smsNotifications: user.smsNotifications || false
+      });
     }
-  }, [id]);
+  }, [user]);
   
   // Handle form input changes
   const handleInputChange = (e) => {
@@ -205,37 +107,44 @@ export default function UserDetailPage() {
   };
   
   // Save changes
-  const handleSaveChanges = () => {
-    setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setUser({
-        ...user,
+  const handleSaveChanges = async () => {
+    try {
+      await updateUserMutation.mutateAsync({
+        id,
         ...formData
       });
+      
       setIsEditing(false);
-      setSuccessMessage('User information updated successfully');
+      refetch(); // Refresh user data
       
-      // Clear success message after 3 seconds
-      setTimeout(() => setSuccessMessage(''), 3000);
-      
-      setIsLoading(false);
-    }, 800);
+      toast({
+        title: "Success",
+        description: "User information updated successfully",
+        variant: "success",
+      });
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: err.message || "Failed to update user",
+        variant: "destructive",
+      });
+    }
   };
   
   // Cancel editing
   const handleCancelEdit = () => {
-    setFormData({
-      name: user.name,
-      email: user.email,
-      phone: user.phone || '',
-      address: user.address || '',
-      role: user.role,
-      status: user.status,
-      emailNotifications: user.emailNotifications,
-      smsNotifications: user.smsNotifications
-    });
+    if (user) {
+      setFormData({
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        address: user.address || '',
+        role: user.role || 'USER',
+        status: user.status || 'active',
+        emailNotifications: user.emailNotifications || false,
+        smsNotifications: user.smsNotifications || false
+      });
+    }
     setIsEditing(false);
   };
   
@@ -266,30 +175,40 @@ export default function UserDetailPage() {
   }
   
   // Show loading state
-  if (isLoading && !user) {
+  if (isLoading || !user) {
+    return <UserDetailSkeleton />;
+  }
+  
+  // Show error state
+  if (isError) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="p-8">
+        <Alert variant="destructive">
+          <AlertDescription>
+            {error?.message || "Failed to load user details. Please try again."}
+          </AlertDescription>
+        </Alert>
+        <Button 
+          className="mt-4" 
+          variant="outline" 
+          onClick={() => router.push('/admin/users')}
+        >
+          <ChevronLeft className="mr-2 h-4 w-4" />
+          Back to User List
+        </Button>
       </div>
     );
   }
   
-  // Helper function to get initials from name
-  const getInitials = (name) => {
-    if (!name) return 'U';
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase()
-      .substring(0, 2);
-  };
+  // Extract recent orders and login activity
+  const recentOrders = user.recentOrders || [];
+  const loginActivity = user.loginActivity || [];
   
   return (
     <>
       <Head>
         <title>User Details | Admin Dashboard</title>
-        <meta name="description" content="User details in TIF Store admin dashboard" />
+        <meta name="description" content="User details in Admin dashboard" />
       </Head>
 
       <div className="space-y-6">
@@ -314,23 +233,22 @@ export default function UserDetailPage() {
             </Button>
           ) : (
             <div className="flex gap-2">
-              <Button variant="outline" onClick={handleCancelEdit}>
+              <Button 
+                variant="outline" 
+                onClick={handleCancelEdit}
+                disabled={updateUserMutation.isPending}
+              >
                 Cancel
               </Button>
-              <Button onClick={handleSaveChanges}>
-                Save Changes
+              <Button 
+                onClick={handleSaveChanges}
+                disabled={updateUserMutation.isPending}
+              >
+                {updateUserMutation.isPending ? 'Saving...' : 'Save Changes'}
               </Button>
             </div>
           )}
         </div>
-        
-        {/* Success Message */}
-        {successMessage && (
-          <Alert className="bg-green-50 text-green-800 border-green-200">
-            <CheckCircle className="h-4 w-4" />
-            <AlertDescription>{successMessage}</AlertDescription>
-          </Alert>
-        )}
         
         {/* User Profile */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -349,7 +267,7 @@ export default function UserDetailPage() {
                     {user.isVerified && (
                       <CheckCircle className="h-4 w-4 text-blue-500 ml-1" />
                     )}
-                  </h2>
+                    </h2>
                   <p className="text-sm text-muted-foreground">{user.email}</p>
                 </div>
                 
@@ -392,7 +310,7 @@ export default function UserDetailPage() {
                   <div className="flex items-center gap-2 text-sm">
                     <ShoppingBag className="h-4 w-4 text-muted-foreground" />
                     <span className="text-muted-foreground">Orders:</span>
-                    <span className="ml-auto">{user.ordersCount}</span>
+                    <span className="ml-auto">{user.ordersCount || 0}</span>
                   </div>
                   
                   <div className="flex items-center gap-2 text-sm">
@@ -438,41 +356,6 @@ export default function UserDetailPage() {
                           <div className="flex items-start gap-2">
                             <User className="h-4 w-4 mt-0.5 text-muted-foreground" />
                             <span className="font-medium">{user.name}</span>
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="email">Email Address</Label>
-                        {isEditing ? (
-                          <Input
-                            id="email"
-                            name="email"
-                            value={formData.email}
-                            onChange={handleInputChange}
-                          />
-                        ) : (
-                          <div className="flex items-start gap-2">
-                            <Mail className="h-4 w-4 mt-0.5 text-muted-foreground" />
-                            <span className="font-medium">{user.email}</span>
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="phone">Phone Number</Label>
-                        {isEditing ? (
-                          <Input
-                            id="phone"
-                            name="phone"
-                            placeholder="e.g., 08123456789"
-                            value={formData.phone}
-                            onChange={handleInputChange}
-                          />
-                        ) : (
-                          <div className="flex items-start gap-2">
-                            <Phone className="h-4 w-4 mt-0.5 text-muted-foreground" />
-                            <span className="font-medium">{user.phone || '-'}</span>
                           </div>
                         )}
                       </div>
@@ -536,6 +419,40 @@ export default function UserDetailPage() {
                         </div>
                       </>
                     )}
+                      <div className="space-y-2">
+                        <Label htmlFor="email">Email Address</Label>
+                        {isEditing ? (
+                          <Input
+                            id="email"
+                            name="email"
+                            value={formData.email}
+                            onChange={handleInputChange}
+                          />
+                        ) : (
+                          <div className="flex items-start gap-2">
+                            <Mail className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                            <span className="font-medium">{user.email}</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="phone">Phone Number</Label>
+                        {isEditing ? (
+                          <Input
+                            id="phone"
+                            name="phone"
+                            placeholder="e.g., 08123456789"
+                            value={formData.phone}
+                            onChange={handleInputChange}
+                          />
+                        ) : (
+                          <div className="flex items-start gap-2">
+                            <Phone className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                            <span className="font-medium">{user.phone || '-'}</span>
+                          </div>
+                        )}
+                      </div>
                   </CardContent>
                 </Card>
                 
@@ -560,7 +477,7 @@ export default function UserDetailPage() {
                           onCheckedChange={(checked) => handleToggleChange('emailNotifications', checked)}
                         />
                       ) : (
-                        user.emailNotifications ? (
+                        formData?.emailNotifications ? (
                           <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                             Enabled
                           </Badge>
@@ -585,7 +502,7 @@ export default function UserDetailPage() {
                           onCheckedChange={(checked) => handleToggleChange('smsNotifications', checked)}
                         />
                       ) : (
-                        user.smsNotifications ? (
+                        formData?.smsNotifications ? (
                           <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                             Enabled
                           </Badge>
@@ -608,7 +525,7 @@ export default function UserDetailPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    {mockOrders.length > 0 ? (
+                    {recentOrders.length > 0 ? (
                       <div className="rounded-md border">
                         <div className="relative w-full overflow-auto">
                           <table className="w-full caption-bottom text-sm">
@@ -623,25 +540,27 @@ export default function UserDetailPage() {
                               </tr>
                             </thead>
                             <tbody>
-                              {mockOrders.map((order) => (
+                              {recentOrders.map((order) => (
                                 <tr key={order.id} className="border-b transition-colors hover:bg-muted/50">
-                                  <td className="p-2 align-middle font-medium">{order.id.slice(-6)}</td>
+                                  <td className="p-2 align-middle font-medium">{order.orderNumber}</td>
                                   <td className="p-2 align-middle">{new Date(order.date).toLocaleDateString()}</td>
                                   <td className="p-2 align-middle">
-                                    <div>
-                                      <div className="font-medium">{order.game}</div>
-                                      <div className="text-xs text-muted-foreground">{order.product}</div>
-                                    </div>
+                                    {order.items.map((item, idx) => (
+                                      <div key={idx}>
+                                        <div className="font-medium">{item.game}</div>
+                                        <div className="text-xs text-muted-foreground">{item.product}</div>
+                                      </div>
+                                    ))}
                                   </td>
                                   <td className="p-2 align-middle">
                                     {new Intl.NumberFormat('id-ID', {
                                       style: 'currency',
                                       currency: 'IDR',
                                       minimumFractionDigits: 0
-                                    }).format(order.price)}
+                                    }).format(order.totalAmount)}
                                   </td>
-                                  <td className="p-2 align-middle">{getStatusBadge(order.status)}</td>
-                                  <td className="p-2 align-middle">{order.paymentMethod}</td>
+                                  <td className="p-2 align-middle">{getStatusBadge(order.status.toLowerCase())}</td>
+                                  <td className="p-2 align-middle">{order.paymentMethod || '-'}</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -655,10 +574,10 @@ export default function UserDetailPage() {
                       </div>
                     )}
                   </CardContent>
-                  {mockOrders.length > 0 && (
+                  {recentOrders.length > 0 && (
                     <CardFooter className="justify-between border-t pt-4">
                       <div className="text-sm text-muted-foreground">
-                        Showing {mockOrders.length} recent orders
+                        Showing {recentOrders.length} recent orders
                       </div>
                       <Button variant="outline" size="sm" onClick={() => router.push(`/admin/orders?userId=${id}`)}>
                         View All Orders
@@ -678,7 +597,7 @@ export default function UserDetailPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    {mockLoginActivity.length > 0 ? (
+                    {loginActivity.length > 0 ? (
                       <div className="rounded-md border">
                         <div className="relative w-full overflow-auto">
                           <table className="w-full caption-bottom text-sm">
@@ -692,7 +611,7 @@ export default function UserDetailPage() {
                               </tr>
                             </thead>
                             <tbody>
-                              {mockLoginActivity.map((activity) => (
+                              {loginActivity.map((activity) => (
                                 <tr key={activity.id} className="border-b transition-colors hover:bg-muted/50">
                                   <td className="p-2 align-middle">
                                     {new Date(activity.date).toLocaleDateString()}{' '}
@@ -757,17 +676,36 @@ export default function UserDetailPage() {
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
                         <div className="text-base font-medium text-destructive flex items-center">
-                          <AlertTriangle className="h-4 w-4 mr-1" />
-                          Suspend Account
+                          <X className="h-4 w-4 mr-1" />
+                          {user.status === 'suspended' ? 'Unsuspend Account' : 'Suspend Account'}
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          Temporarily block user access to the platform
+                          {user.status === 'suspended' ? 
+                            'Restore user access to the platform' : 
+                            'Temporarily block user access to the platform'}
                         </p>
                       </div>
                       {user.status === 'suspended' ? (
-                        <Button variant="outline">Unsuspend</Button>
+                        <Button 
+                          variant="outline"
+                          onClick={() => {
+                            handleSelectChange('status', 'active');
+                            handleSaveChanges();
+                          }}
+                        >
+                          Unsuspend
+                        </Button>
                       ) : (
-                        <Button variant="outline" className="text-destructive">Suspend</Button>
+                        <Button 
+                          variant="outline" 
+                          className="text-destructive"
+                          onClick={() => {
+                            handleSelectChange('status', 'suspended');
+                            handleSaveChanges();
+                          }}
+                        >
+                          Suspend
+                        </Button>
                       )}
                     </div>
                   </CardContent>
@@ -781,6 +719,51 @@ export default function UserDetailPage() {
   );
 }
 
+// Helper function to get initials from name
+function getInitials(name) {
+  if (!name) return 'U';
+  return name
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .toUpperCase()
+    .substring(0, 2);
+}
+
+// User Detail Skeleton loader
+function UserDetailSkeleton() {
+  return (
+    <div className="p-8 space-y-6">
+      {/* Header Skeleton */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-9 w-9 rounded-md" />
+          <div>
+            <Skeleton className="h-7 w-56" />
+            <Skeleton className="h-4 w-40 mt-1" />
+          </div>
+        </div>
+        <Skeleton className="h-9 w-32" />
+      </div>
+      
+      {/* Content Skeleton */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        {/* Left Column */}
+        <div className="md:col-span-1">
+          <Skeleton className="h-[400px] w-full rounded-md" />
+        </div>
+        
+        {/* Right Column */}
+        <div className="md:col-span-3 space-y-6">
+          <Skeleton className="h-10 w-full rounded-md" />
+          <Skeleton className="h-[300px] w-full rounded-md" />
+          <Skeleton className="h-[200px] w-full rounded-md" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Apply a custom layout to include the sidebar
 UserDetailPage.getLayout = function getLayout(page) {
   return (
@@ -791,4 +774,5 @@ UserDetailPage.getLayout = function getLayout(page) {
       </div>
     </div>
   );
-};
+}; 
+

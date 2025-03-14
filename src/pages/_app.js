@@ -7,6 +7,7 @@ import { DefaultSeo } from 'next-seo';
 import '@/styles/globals.css';
 import 'react-toastify/dist/ReactToastify.css';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import { QueryProvider } from '@/providers/QueryProvider';
 
 function MyApp({ Component, pageProps: { session, ...pageProps } }) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tifstore.com';
@@ -47,10 +48,13 @@ function MyApp({ Component, pageProps: { session, ...pageProps } }) {
           disableTransitionOnChange
         >
           <SessionProvider session={session}>
+            <QueryProvider>
             <AuthProvider> 
               {getLayout(<Component {...pageProps} />)}
               <ToastContainer position="top-right" autoClose={3000} />
             </AuthProvider>
+            </QueryProvider>
+           
           </SessionProvider>
         </ThemeProvider>
       

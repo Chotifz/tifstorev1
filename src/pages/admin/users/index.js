@@ -5,7 +5,6 @@ import { useSession } from 'next-auth/react';
 import { 
   Users, 
   Search, 
-  Filter, 
   RefreshCcw,
   MoreHorizontal,
   Edit,
@@ -15,15 +14,10 @@ import {
   AlertCircle,
   UserPlus,
   Download,
-  ChevronDown,
-  Mail,
-  Clock,
-  ShieldAlert,
-  ShieldCheck
 } from 'lucide-react';
 
 // Components
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
@@ -41,7 +35,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -53,164 +46,38 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import Sidebar from '@/components/Sidebar';
+import { useToast } from "@/hooks/useToast";
+import { useUsers } from '@/hooks/queries/useUsers';
+import { useDeleteUser, useUpdateUser } from '@/hooks/mutations/useUserMutations';
 
 export default function AdminUsers() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
-  const [users, setUsers] = useState([]);
-  const [filteredUsers, setFilteredUsers] = useState([]);
+  const { toast } = useToast();
+  
+  // State for filters and user actions
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [roleFilter, setRoleFilter] = useState('all');
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [userToEdit, setUserToEdit] = useState(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
-
-  // Mock data for users
-  const mockUsers = [
-    {
-      id: '1',
-      name: 'John Doe',
-      email: 'john@example.com',
-      role: 'USER',
-      isVerified: true,
-      joinDate: '2025-01-15T10:30:45.000Z',
-      lastLoginDate: '2025-03-12T08:15:22.000Z',
-      image: null,
-      status: 'active',
-      ordersCount: 12,
-      phone: '08123456789',
-      address: 'Jl. Sudirman No. 123, Jakarta'
-    },
-    {
-      id: '2',
-      name: 'Jane Smith',
-      email: 'jane@example.com',
-      role: 'ADMIN',
-      isVerified: true,
-      joinDate: '2025-01-20T14:22:33.000Z',
-      lastLoginDate: '2025-03-13T09:45:12.000Z',
-      image: null,
-      status: 'active',
-      ordersCount: 3,
-      phone: '08567891234',
-      address: 'Jl. Gatot Subroto No. 45, Jakarta'
-    },
-    {
-      id: '3',
-      name: 'Mike Johnson',
-      email: 'mike@example.com',
-      role: 'USER',
-      isVerified: false,
-      joinDate: '2025-02-05T09:15:27.000Z',
-      lastLoginDate: null,
-      image: null,
-      status: 'pending',
-      ordersCount: 0,
-      phone: null,
-      address: null
-    },
-    {
-      id: '4',
-      name: 'Sarah Williams',
-      email: 'sarah@example.com',
-      role: 'USER',
-      isVerified: true,
-      joinDate: '2025-02-10T16:48:19.000Z',
-      lastLoginDate: '2025-03-10T12:33:45.000Z',
-      image: null,
-      status: 'active',
-      ordersCount: 5,
-      phone: '08123987456',
-      address: 'Jl. Thamrin No. 88, Jakarta'
-    },
-    {
-      id: '5',
-      name: 'David Lee',
-      email: 'david@example.com',
-      role: 'USER',
-      isVerified: true,
-      joinDate: '2025-01-12T08:22:15.000Z',
-      lastLoginDate: '2025-03-01T17:11:33.000Z',
-      image: null,
-      status: 'suspended',
-      ordersCount: 8,
-      phone: '08789456123',
-      address: 'Jl. Asia Afrika No. 15, Bandung'
-    }
-  ];
   
-  // Initialize data
-  useEffect(() => {
-    setTimeout(() => {
-      setUsers(mockUsers);
-      setFilteredUsers(mockUsers);
-      setIsLoading(false);
-    }, 1000);
-  }, []);
+  // Fetch users with TanStack Query
+  const { data, isLoading, isError, error, refetch } = useUsers({
+    searchQuery,
+    statusFilter,
+    roleFilter
+  });
   
-  // Apply filters when any filter or search changes
-  useEffect(() => {
-    let result = [...users];
-    
-    // Apply search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(user => 
-        user.name.toLowerCase().includes(query) || 
-        user.email.toLowerCase().includes(query) ||
-        (user.phone && user.phone.includes(query))
-      );
-    }
-    
-    // Apply status filter
-    if (statusFilter !== 'all') {
-      result = result.filter(user => user.status === statusFilter);
-    }
-    
-    // Apply role filter
-    if (roleFilter !== 'all') {
-      result = result.filter(user => user.role === roleFilter);
-    }
-    
-    setFilteredUsers(result);
-  }, [searchQuery, statusFilter, roleFilter, users]);
+  // User mutations
+  const deleteUserMutation = useDeleteUser();
+  const updateUserMutation = useUpdateUser();
   
-  // Handle user deletion
-  const handleDeleteUser = (user) => {
-    setUserToDelete(user);
-    setShowDeleteDialog(true);
-  };
-  
-  // Confirm user deletion
-  const confirmDelete = () => {
-    if (!userToDelete) return;
-    
-    // Simulate API call
-    setIsLoading(true);
-    
-    setTimeout(() => {
-      // Remove the user from the state
-      setUsers(prev => prev.filter(u => u.id !== userToDelete.id));
-      setShowDeleteDialog(false);
-      setUserToDelete(null);
-      setSuccessMessage('User successfully deleted');
-      
-      // Clear success message after 3 seconds
-      setTimeout(() => setSuccessMessage(''), 3000);
-      
-      setIsLoading(false);
-    }, 800);
-  };
-  
-  // Open edit user dialog
+  // Handle edit user
   const handleEditUser = (user) => {
     setUserToEdit({
       ...user,
@@ -220,45 +87,69 @@ export default function AdminUsers() {
     setShowEditDialog(true);
   };
   
-  // Handle edit user form changes
+  // Handle edit change
   const handleEditChange = (field, value) => {
-    setUserToEdit({
-      ...userToEdit,
+    setUserToEdit(prev => ({
+      ...prev,
       [field]: value
-    });
+    }));
   };
   
-  // Save user changes
-  const saveUserChanges = () => {
+  // Handle save user changes
+  const handleSaveChanges = async () => {
     if (!userToEdit) return;
     
-    // Simulate API call
-    setIsLoading(true);
-    
-    setTimeout(() => {
-      // Update user in the state
-      setUsers(prev => prev.map(u => {
-        if (u.id === userToEdit.id) {
-          return {
-            ...u,
-            role: userToEdit.newRole,
-            status: userToEdit.newStatus
-          };
-        }
-        return u;
-      }));
+    try {
+      await updateUserMutation.mutateAsync({
+        id: userToEdit.id,
+        role: userToEdit.newRole,
+        status: userToEdit.newStatus
+      });
       
       setShowEditDialog(false);
-      setUserToEdit(null);
-      setSuccessMessage('User successfully updated');
-      
-      // Clear success message after 3 seconds
-      setTimeout(() => setSuccessMessage(''), 3000);
-      
-      setIsLoading(false);
-    }, 800);
+      toast({
+        title: "User updated",
+        description: "User has been updated successfully",
+        variant: "success",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update user",
+        variant: "destructive",
+      });
+    }
   };
   
+  // Handle user deletion
+  const handleDeleteUser = (user) => {
+    setUserToDelete(user);
+    setShowDeleteDialog(true);
+  };
+  
+  // Confirm delete user
+  const confirmDelete = async () => {
+    if (!userToDelete) return;
+    
+    try {
+      await deleteUserMutation.mutateAsync(userToDelete.id);
+      
+      setShowDeleteDialog(false);
+      setUserToDelete(null);
+      toast({
+        title: "User deleted",
+        description: "User has been deleted successfully",
+        variant: "success",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete user",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Redirect if not authorized
   useEffect(() => {
     if (status === 'authenticated' && session?.user?.role !== 'ADMIN') {
@@ -270,12 +161,16 @@ export default function AdminUsers() {
   if (status === 'authenticated' && session?.user?.role !== 'ADMIN') {
     return null;
   }
+
+  // Get users data
+  const users = data?.users || [];
+  const pagination = data?.pagination || { total: 0 };
   
   return (
     <>
       <Head>
         <title>User Management | Admin Dashboard</title>
-        <meta name="description" content="Manage users in TIF Store admin dashboard" />
+        <meta name="description" content="Manage users in your admin dashboard" />
       </Head>
 
       <div className="space-y-6">
@@ -288,21 +183,16 @@ export default function AdminUsers() {
           </div>
           <Button onClick={() => router.push('/admin/users/add')}>
             <UserPlus className="mr-2 h-4 w-4" /> Add User
-          </Button>
-        </div>
-        
-        {/* Success/Error Messages */}
-        {successMessage && (
-          <Alert className="bg-green-50 text-green-800 border-green-200">
-            <CheckCircle className="h-4 w-4" />
-            <AlertDescription>{successMessage}</AlertDescription>
-          </Alert>
-        )}
-        
-        {errorMessage && (
+      </Button>
+      </div>
+
+       {/* Display error */}
+       {isError && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{errorMessage}</AlertDescription>
+            <AlertDescription>
+              {error?.message || "Failed to load users. Please try again."}
+            </AlertDescription>
           </Alert>
         )}
         
@@ -352,15 +242,22 @@ export default function AdminUsers() {
           
           <div className="flex-grow"></div>
           
-          <Button variant="outline" size="icon" title="Refresh" disabled={isLoading}>
+          <Button 
+            variant="outline" 
+            size="icon" 
+            title="Refresh" 
+            disabled={isLoading}
+            onClick={() => refetch()}
+          >
             <RefreshCcw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
           </Button>
-        </div>
+        </div> 
+        
         
         {/* Users List */}
         {isLoading ? (
           <UsersListSkeleton />
-        ) : filteredUsers.length > 0 ? (
+        ) : users.length > 0 ? (
           <div className="rounded-md border">
             <div className="relative w-full overflow-auto">
               <table className="w-full caption-bottom text-sm">
@@ -375,7 +272,7 @@ export default function AdminUsers() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredUsers.map((user) => (
+                  {users.map((user) => (
                     <tr key={user.id} className="border-b transition-colors hover:bg-muted/50">
                       <td className="p-4 align-middle">
                         <div className="flex items-center gap-3">
@@ -447,12 +344,16 @@ export default function AdminUsers() {
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             {user.status === 'active' ? (
-                              <DropdownMenuItem onClick={() => handleEditChange('newStatus', 'suspended')}>
+                              <DropdownMenuItem 
+                                onClick={() => handleEditUser({...user, newStatus: 'suspended'})}
+                              >
                                 <EyeOff className="mr-2 h-4 w-4" />
                                 Suspend User
                               </DropdownMenuItem>
                             ) : (
-                              <DropdownMenuItem onClick={() => handleEditChange('newStatus', 'active')}>
+                              <DropdownMenuItem 
+                                onClick={() => handleEditUser({...user, newStatus: 'active'})}
+                              >
                                 <CheckCircle className="mr-2 h-4 w-4" />
                                 Activate User
                               </DropdownMenuItem>
@@ -491,11 +392,11 @@ export default function AdminUsers() {
           </div>
         )}
         
-        {/* Export */}
-        {filteredUsers.length > 0 && (
+        {/* Pagination and Export */}
+        {users.length > 0 && (
           <div className="flex justify-between items-center mt-4">
             <div className="text-sm text-muted-foreground">
-              Showing {filteredUsers.length} of {users.length} users
+              Showing {users.length} of {pagination.total} users
             </div>
             <Button variant="outline" size="sm">
               <Download className="mr-2 h-4 w-4" />
@@ -529,11 +430,19 @@ export default function AdminUsers() {
             )}
             
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+              <Button 
+                variant="outline" 
+                onClick={() => setShowDeleteDialog(false)}
+                disabled={deleteUserMutation.isPending}
+              >
                 Cancel
               </Button>
-              <Button variant="destructive" onClick={confirmDelete}>
-                Delete
+              <Button 
+                variant="destructive" 
+                onClick={confirmDelete}
+                disabled={deleteUserMutation.isPending}
+              >
+                {deleteUserMutation.isPending ? 'Deleting...' : 'Delete'}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -598,16 +507,24 @@ export default function AdminUsers() {
             )}
             
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowEditDialog(false)}>
+              <Button 
+                variant="outline" 
+                onClick={() => setShowEditDialog(false)}
+                disabled={updateUserMutation.isPending}
+              >
                 Cancel
               </Button>
-              <Button onClick={saveUserChanges}>
-                Save Changes
+              <Button 
+                onClick={handleSaveChanges}
+                disabled={updateUserMutation.isPending}
+              >
+                {updateUserMutation.isPending ? 'Saving...' : 'Save Changes'}
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
+     
     </>
   );
 }
@@ -623,7 +540,7 @@ function getInitials(name) {
     .substring(0, 2);
 }
 
-function UsersListSkeleton() {
+ function UsersListSkeleton() {
   return (
     <div className="rounded-md border">
       <div className="relative w-full overflow-auto">
@@ -675,9 +592,10 @@ function UsersListSkeleton() {
       </div>
     </div>
   );
-}
+} 
 
-// Apply a custom layout to include the sidebar
+ // Apply a custom layout to include the sidebar
+
 AdminUsers.getLayout = function getLayout(page) {
   return (
     <div className="flex min-h-screen">
@@ -687,4 +605,8 @@ AdminUsers.getLayout = function getLayout(page) {
       </div>
     </div>
   );
-};
+};  
+
+   
+        
+       

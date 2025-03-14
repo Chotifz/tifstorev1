@@ -28,6 +28,8 @@ import Sidebar from '@/components/Sidebar';
 
 // Utils
 import { formatPrice } from '@/config/format-price';
+import { AdminSkeleton } from '@/components/Skeloton';
+
 
 // Sample data for the dashboard
 const mockRecentOrders = [
@@ -327,66 +329,8 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle>User Baru</CardTitle>
-                <CardDescription>Pengguna yang mendaftar bulan ini</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {mockUsers.map((user, index) => (
-                    <div key={index} className="flex items-center gap-3">
-                      <Avatar className="h-9 w-9">
-                        <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                          {user.name.split(' ').map(n => n[0]).join('')}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm">{user.name}</p>
-                        <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-                      </div>
-                      <Badge variant={user.status === 'active' ? 'outline' : 'secondary'} className="capitalize text-xs">
-                        {user.status}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-                <Button variant="ghost" size="sm" className="mt-4 w-full gap-1 text-xs">
-                  Lihat Semua Pengguna
-                  <ArrowUpRight className="h-3 w-3" />
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle>Tugas Mendesak</CardTitle>
-                <CardDescription>Pesanan yang perlu ditindaklanjuti</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3 p-3 rounded-lg bg-yellow-50 border border-yellow-200">
-                    <div className="h-8 w-8 rounded-full bg-yellow-100 flex items-center justify-center flex-shrink-0">
-                      <Clock className="h-4 w-4 text-yellow-600" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">5 pesanan menunggu</p>
-                      <p className="text-xs text-muted-foreground">Perlu diproses dalam 15 menit</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-3 p-3 rounded-lg bg-blue-50 border border-blue-200">
-                    <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                      <Users className="h-4 w-4 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">3 verifikasi user tertunda</p>
-                      <p className="text-xs text-muted-foreground">Menunggu verifikasi ID</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+      
+          
           </div>
         </div>
       </div>
@@ -423,79 +367,7 @@ function AdminDashboardSkeleton() {
         ))}
       </div>
 
-      {/* Main Content Skeleton */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <Card className="mb-6">
-            <CardHeader className="pb-2">
-              <Skeleton className="h-6 w-32 mb-2" />
-              <Skeleton className="h-4 w-48" />
-            </CardHeader>
-            <CardContent className="p-6">
-              <Skeleton className="w-full h-64 rounded-lg" />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <div className="flex justify-between items-center">
-                <div>
-                  <Skeleton className="h-6 w-40 mb-2" />
-                  <Skeleton className="h-4 w-56" />
-                </div>
-                <Skeleton className="h-9 w-24" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              {Array(4).fill(null).map((_, i) => (
-                <div key={i} className="flex items-center space-x-4 py-4">
-                  <Skeleton className="h-4 w-16" />
-                  <Skeleton className="h-4 w-24 flex-1" />
-                  <Skeleton className="h-4 w-20" />
-                  <Skeleton className="h-4 w-16" />
-                  <Skeleton className="h-6 w-16 rounded-full" />
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="space-y-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <Skeleton className="h-6 w-28 mb-2" />
-              <Skeleton className="h-4 w-48" />
-            </CardHeader>
-            <CardContent>
-              {Array(5).fill(null).map((_, i) => (
-                <div key={i} className="flex items-center justify-between py-2">
-                  <Skeleton className="h-4 w-48" />
-                  <Skeleton className="h-4 w-16" />
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <Skeleton className="h-6 w-24 mb-2" />
-              <Skeleton className="h-4 w-40" />
-            </CardHeader>
-            <CardContent>
-              {Array(3).fill(null).map((_, i) => (
-                <div key={i} className="flex items-center space-x-3 py-2">
-                  <Skeleton className="h-9 w-9 rounded-full" />
-                  <div className="flex-1">
-                    <Skeleton className="h-4 w-24 mb-1" />
-                    <Skeleton className="h-3 w-32" />
-                  </div>
-                  <Skeleton className="h-5 w-12 rounded-full" />
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+     <AdminSkeleton />
     </div>
   );
 }
